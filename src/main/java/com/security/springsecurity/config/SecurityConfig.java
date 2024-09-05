@@ -36,6 +36,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(request -> request
                         .requestMatchers("/api/v1/user/create","/api/v1/user/login")
                         .permitAll()
+                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/user/**").hasRole("USER") 
                         .anyRequest().authenticated())
                 .httpBasic(Customizer.withDefaults())//Post Man Checking Enable
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))//To MAke Session Id Change In Every Render

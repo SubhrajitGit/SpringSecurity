@@ -17,4 +17,6 @@ public class User {
     private Integer id;
     private String username;
     private String password;
+    @Enumerated(EnumType.STRING)
+    private Role role=Role.USER;
 }
