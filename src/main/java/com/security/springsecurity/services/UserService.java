@@ -24,6 +24,9 @@ public class UserService {
     @Autowired
     AuthenticationManager authenticationManager;
 
+    @Autowired
+    MyUserDetailsService myUserDetailsService;
+
     private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
 
 //    @Autowired
@@ -48,7 +51,7 @@ public class UserService {
     public ResponseEntity<?> verifyUser(User user) {
         Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword()));
         if(authentication.isAuthenticated()) {
-            return ResponseEntity.ok(jwtService.generateToken(user.getUsername()));
+            return ResponseEntity.ok(jwtService.generateToken(myUserDetailsService.loadUserByUsername(user.getUsername())));
         }
         return ResponseEntity.status(401).body("Invalid username or password");
     }

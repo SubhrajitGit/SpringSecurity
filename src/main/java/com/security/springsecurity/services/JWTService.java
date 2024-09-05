@@ -1,51 +1,61 @@
 package com.security.springsecurity.services;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
-import org.springframework.http.ResponseEntity;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
-import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import java.security.Key;
-import java.security.NoSuchAlgorithmException;
+import java.time.Instant;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class JWTService {
-    private String secretKey = "";
-    public JWTService() {
-        try {
-            KeyGenerator keyGen = KeyGenerator.getInstance("HmacSHA256");
-            SecretKey key = keyGen.generateKey();
-            secretKey = Base64.getEncoder().encodeToString(key.getEncoded());
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
-    }
-    public String generateToken(String username) {
-        Map<String, Object> claims = new HashMap<String, Object>();
+
+    // Use a static secret key or environment variable for simplicity
+    private final String secretKey = Base64.getEncoder().encodeToString("YourSuperSecretKeyForJWTSigningqwertyuiopASDFGHJ".getBytes());
+    private static  final long EXPIRATION_TIME = TimeUnit.MINUTES.toMillis(30);
+    // Generate JWT token
+    public String generateToken(UserDetails userDetails) {
+        Map<String, String> claims = new HashMap<>();
+        claims.put("username", userDetails.getUsername());
         return Jwts.builder()
-                .claims()
-                .add(claims)
-                .subject(username)
-                .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis()+60*60*30))
-                .and()
-                .signWith(getKey())
+                .claims(claims)
+                .subject(userDetails.getUsername())
+                .issuedAt(Date.from(Instant.now()))
+                .expiration(Date.from(Instant.now().plusMillis(EXPIRATION_TIME)))
+                .signWith(generateKey())
                 .compact();
     }
 
-    private Key getKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(secretKey);
-        return Keys.hmacShaKeyFor(keyBytes);
+    private SecretKey generateKey() {
+        byte[] decodeKey = Base64.getDecoder().decode(secretKey);
+        return Keys.hmacShaKeyFor(decodeKey);
     }
 
-    public String extractUserName(String token) {
-        return "";
+    public String extractUserName(String jwt) {
+        Claims claims = getClaims(jwt);
+        return claims.getSubject();
+    }
+
+    private Claims getClaims(String jwt) {
+        return   Jwts.parser()
+                .verifyWith(generateKey())
+                .build()
+                .parseSignedClaims(jwt)
+                .getPayload();
+    }
+
+    public boolean isTokenValid(String jwt) {
+        Claims claims = getClaims(jwt);
+        return claims.getExpiration().after(Date.from(Instant.now()));
     }
 }
