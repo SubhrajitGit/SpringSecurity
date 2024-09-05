@@ -3,6 +3,7 @@ package com.security.springsecurity.controller;
 import com.security.springsecurity.model.User;
 import com.security.springsecurity.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,5 +24,9 @@ public class UserController {
     @PostMapping("/create")
     public ResponseEntity<String> createUser(@RequestBody User user) {
         return userService.createUser(user);
+    }
+    @GetMapping("/login")
+    public ResponseEntity<?> login(@RequestBody User user){
+        return userService.verifyUser(user);
     }
 }
